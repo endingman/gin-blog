@@ -25,7 +25,7 @@ func init() {
 		dbType, dbName, user, password, host, tablePrefix string
 	)
 
-	sec, err := setting.Cfg.getSection("database")
+	sec, err := setting.Cfg.GetSection("database")
 
 	if err != nil {
 		log.Fatal(2, "Fail to get section 'database': %v", err)
@@ -53,10 +53,12 @@ func init() {
 	}
 
 	db.SingularTable(true)
-	db.DB().SetMaxIdleconns(10)
+	// SetMaxIdleConns 设置空闲连接池中的最大连接数。
+	db.DB().SetMaxIdleConns(10)
+	// SetMaxOpenConns 设置数据库连接最大打开数。
 	db.DB().SetMaxOpenConns(100)
 }
 
 func CloseDB() {
-	defer db.close()
+	defer db.Close()
 }
