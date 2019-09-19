@@ -18,11 +18,17 @@ var MsgFlags = map[int]string{
 	ERROR_AUTH:                     "Token错误",
 }
 
-func GetMsg(code int) string {
+func GetMsg(code int, msg string) string {
+
+	if msg != "" {
+		return msg
+	}
+
 	// value, ok := map1[key1] // 如果key1存在则ok == true，否则ok为false
 	msg, ok := MsgFlags[code]
 	if ok {
 		return msg
 	}
+
 	return MsgFlags[ERROR]
 }

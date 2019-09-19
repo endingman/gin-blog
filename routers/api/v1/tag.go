@@ -16,7 +16,7 @@ import (
 //这里使用的并不是原来的名字，使用更加简洁的resful api
 //类似laravel里面的接口方法定义
 func GetTags(c *gin.Context) {
-
+	var msg string
 	// c.Query可用于获取?name=test&state=1这类URL参数，而c.DefaultQuery则支持设置一个默认值
 	// code变量使用了e模块的错误编码，这正是先前规划好的错误码，方便排错和识别记录
 	// util.GetPage保证了各接口的page处理是一致的
@@ -44,7 +44,7 @@ func GetTags(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
-		"msg":  e.GetMsg(code),
+		"msg":  e.GetMsg(code, msg),
 		"data": data,
 	})
 }
@@ -84,13 +84,9 @@ func AddTag(c *gin.Context) {
 		}
 	}
 
-	if msg == "" {
-		msg = e.GetMsg(code)
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
-		"msg":  msg,
+		"msg":  e.GetMsg(code, msg),
 		"data": make(map[string]string),
 	})
 }
@@ -140,13 +136,9 @@ func UpdateTag(c *gin.Context) {
 		}
 	}
 
-	if msg == "" {
-		msg = e.GetMsg(code)
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
-		"msg":  msg,
+		"msg":  e.GetMsg(code, msg),
 		"data": make(map[string]string),
 	})
 }
@@ -177,13 +169,9 @@ func DestoryTag(c *gin.Context) {
 		}
 	}
 
-	if msg == "" {
-		msg = e.GetMsg(code)
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
-		"msg":  msg,
+		"msg":  e.GetMsg(code, msg),
 		"data": make(map[string]string),
 	})
 }
