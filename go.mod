@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/astaxie/beego v1.12.0
 	github.com/denisenkom/go-mssqldb v0.0.0-20190915052044-aa4949efa320 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
@@ -33,6 +33,7 @@ require (
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7 // indirect
 	golang.org/x/net v0.0.0-20190916140828-c8589233b77d // indirect
 	golang.org/x/sys v0.0.0-20190916202348-b4ddaad3f8a3 // indirect
+	google.golang.org/api v0.10.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/ini.v1 v1.46.0 // indirect
 )
