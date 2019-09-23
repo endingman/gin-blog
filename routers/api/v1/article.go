@@ -154,6 +154,7 @@ func UpdateArticle(c *gin.Context) {
 	valid := validation.Validation{}
 
 	id := com.StrTo(c.Param("id")).MustInt()
+	// PostForm===》post的body传值
 	tagId := com.StrTo(c.PostForm("tag_id")).MustInt()
 	title := c.PostForm("title")
 	desc := c.PostForm("desc")
@@ -225,25 +226,25 @@ func DestoryArticle(c *gin.Context) {
 
 	code := e.INVALID_PARAMS
 
-	if !valid.HasErrors(){
+	if !valid.HasErrors() {
 		if models.ExistArticleByID(id) {
 			models.DeleteArticle(id)
-			code=e.SUCCESS
-		}else{
-			code=e.ERROR_NOT_EXIST_ARTICLE
+			code = e.SUCCESS
+		} else {
+			code = e.ERROR_NOT_EXIST_ARTICLE
 		}
-	}else{
-		for _,err :=range valid.Errors{
+	} else {
+		for _, err := range valid.Errors {
 			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
-			msg =err.Message
+			msg = err.Message
 			break
 		}
 	}
 
-	c.JSON(http.StatusOK,gin.H{
-		"code":code,
-		"msg":msg,
-		"data":make(map[string]interface{}),
+	c.JSON(http.StatusOK, gin.H{
+		"code": code,
+		"msg":  msg,
+		"data": make(map[string]interface{}),
 	})
 
 }

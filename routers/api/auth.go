@@ -23,8 +23,9 @@ func GetAuth(c *gin.Context) {
 	password := c.Query("password")
 
 	valid := validation.Validation{}
-
+	// struct初始化
 	a := auth{Username: username, Password: password}
+	// Validation的另外一种验证方式吧，struct里面写验证传入struct的指针地址变量
 	ok, _ := valid.Valid(&a)
 
 	data := make(map[string]interface{})
