@@ -68,9 +68,6 @@ func main() {
 
 	log.Println("Server exiting")
 
-	//endless.DefaultReadTimeOut = setting.ReadTimeout
-	//endless.DefaultWriteTimeOut = setting.WriteTimeout
-	//
 	//router := routers.InitRouter()
 
 	/**

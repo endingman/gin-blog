@@ -6,6 +6,7 @@ import (
 	"gin-blog/pkg/logging"
 	"gin-blog/pkg/setting"
 	"gin-blog/pkg/util"
+	"log"
 	"net/http"
 
 	"github.com/astaxie/beego/validation"
@@ -30,7 +31,7 @@ func GetTags(c *gin.Context) {
 		maps["name"] = name
 	}
 
-	var State int = -1
+	State := -1
 
 	if arg := c.Query("state"); arg != "" {
 		State = com.StrTo(arg).MustInt()
@@ -55,7 +56,7 @@ func AddTag(c *gin.Context) {
 	name := c.PostForm("name")
 	state := com.StrTo(c.DefaultPostForm("state", "0")).MustInt()
 	createdBy := c.PostForm("created_by")
-
+	
 	// "github.com/astaxie/beego/validation"包使用
 	// ~~~习惯了laravel的写法，go的验证太麻烦没有更好的写法或者更一目了然跟业务分离的写法吗？
 	// 没有跟laravel那么简洁的验证，现在的写法相当于是把验证跟业务路基放在一起了，没有分离request跟业务
@@ -100,7 +101,7 @@ func UpdateTag(c *gin.Context) {
 
 	valid := validation.Validation{}
 
-	var state int = -1
+	state := -1
 
 	if arg := c.Query("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
@@ -144,10 +145,38 @@ func UpdateTag(c *gin.Context) {
 }
 
 func ShowTag(c *gin.Context) {
+	var msg string
+	id := com.StrTo(c.Param("id")).MustInt()
 
+	valid := validation.Validation{}
+	valid.Min(id, 1, "id").Message("Id 必须大于 1")
+
+	code := e.INVALID_PARAMS
+	var data interface{}
+
+	if !valid.HasErrors() {
+		if models.ExistArticleByID(id) {
+			data = models.GetTag(id)
+			code = e.SUCCESS
+		} else {
+			code = e.ERROR_NOT_EXIST_ARTICLE
+		}
+	} else {
+		for _, err := range valid.Errors {
+			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
+			msg = err.Message
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": code,
+		"msg":  e.GetMsg(code, msg),
+		"data": data,
+	})
 }
 
-func DestoryTag(c *gin.Context) {
+func DestroyTag(c *gin.Context) {
 	var msg string
 
 	id := com.StrTo(c.Param("id")).MustInt()

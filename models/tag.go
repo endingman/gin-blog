@@ -1,11 +1,5 @@
 package models
 
-import (
-	"time"
-
-	"github.com/jinzhu/gorm"
-)
-
 type Tag struct {
 	Model
 
@@ -57,17 +51,22 @@ gorm所支持的回调方法：
 删除：BeforeDelete、AfterDelete
 查询：AfterFind
 */
-func (tag *Tag) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("CreatedOn", time.Now().Unix())
 
-	return nil
-}
+/**
+使用钩子函数代替
+*/
 
-func (tag *Tag) BeforeUpdate(scope *gorm.Scope) error {
-	scope.SetColumn("ModifiedOn", time.Now().Unix())
-
-	return nil
-}
+//func (tag *Tag) BeforeCreate(scope *gorm.Scope) error {
+//	scope.SetColumn("CreatedOn", time.Now().Unix())
+//
+//	return nil
+//}
+//
+//func (tag *Tag) BeforeUpdate(scope *gorm.Scope) error {
+//	scope.SetColumn("ModifiedOn", time.Now().Unix())
+//
+//	return nil
+//}
 
 func ExistTagByID(id int) bool {
 	var tag Tag
@@ -90,4 +89,10 @@ func EditTag(id int, data interface{}) bool {
 	db.Model(&Tag{}).Where("id = ?", id).Updates(data)
 
 	return true
+}
+
+func GetTag(id int) (tag Tag) {
+	db.Where("id = ?", id).First(&tag)
+	
+	return
 }
