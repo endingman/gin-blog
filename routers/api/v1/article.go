@@ -24,7 +24,7 @@ func GetArticles(c *gin.Context) {
 
 	valid := validation.Validation{}
 
-	var state int = -1
+	state := -1
 	// 链接参数条件state
 	if arg := c.Query("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
@@ -33,7 +33,7 @@ func GetArticles(c *gin.Context) {
 		valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
 	}
 
-	var tagId int = -1
+	tagId := -1
 	// 链接参数条件tag_id
 	if arg := c.Query("tag_id"); arg != "" {
 		tagId = com.StrTo(arg).MustInt()
@@ -161,7 +161,7 @@ func UpdateArticle(c *gin.Context) {
 	content := c.PostForm("content")
 	modifiedBy := c.PostForm("modified_by")
 
-	var state int = -1
+	state := -1
 	if arg := c.PostForm("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
 		valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
@@ -217,7 +217,7 @@ func UpdateArticle(c *gin.Context) {
 	})
 }
 
-func DestoryArticle(c *gin.Context) {
+func DestroyArticle(c *gin.Context) {
 	var msg string
 	id := com.StrTo(c.Param("id")).MustInt()
 

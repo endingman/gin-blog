@@ -56,7 +56,7 @@ func AddTag(c *gin.Context) {
 	name := c.PostForm("name")
 	state := com.StrTo(c.DefaultPostForm("state", "0")).MustInt()
 	createdBy := c.PostForm("created_by")
-	
+
 	// "github.com/astaxie/beego/validation"包使用
 	// ~~~习惯了laravel的写法，go的验证太麻烦没有更好的写法或者更一目了然跟业务分离的写法吗？
 	// 没有跟laravel那么简洁的验证，现在的写法相当于是把验证跟业务路基放在一起了，没有分离request跟业务
@@ -67,10 +67,10 @@ func AddTag(c *gin.Context) {
 	valid.Required(createdBy, "created_by").Message("创建人不能为空")
 	valid.MaxSize(createdBy, 100, "created_by").Message("创建人最长为100字符")
 	valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
-
+	
 	code := e.INVALID_PARAMS
 
-	if !valid.HasErrors() {
+	if ! valid.HasErrors() {
 		if !models.ExistTagByName(name) {
 			code = e.SUCCESS
 			models.AddTag(name, state, createdBy)
