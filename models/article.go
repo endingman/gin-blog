@@ -101,3 +101,12 @@ gorm所支持的回调方法：
 //
 //	return nil
 //}
+
+func CleanAllArticles() bool {
+	//硬删除要使用 Unscoped()，这是 GORM 的约定
+	if err := db.Unscoped().Where("deleted_on != ? ", 0).Delete(&Article{}).Error; err != nil {
+		return false
+	}
+
+	return true
+}

@@ -93,6 +93,15 @@ func EditTag(id int, data interface{}) bool {
 
 func GetTag(id int) (tag Tag) {
 	db.Where("id = ?", id).First(&tag)
-	
+
 	return
+}
+
+func CleanAllTags() bool {
+	//硬删除要使用 Unscoped()，这是 GORM 的约定
+	if err := db.Unscoped().Where("deleted_on != ? ", 0).Delete(&Tag{}).Error; err != nil {
+		return false
+	}
+
+	return true
 }
