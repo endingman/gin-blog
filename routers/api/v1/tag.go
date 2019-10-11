@@ -40,7 +40,7 @@ func GetTags(c *gin.Context) {
 
 	code := e.SUCCESS
 
-	data["list"] = models.GetTags(util.GetPage(c), setting.PageSize, maps)
+	data["list"] = models.GetTags(util.GetPage(c), setting.AppSetting.PageSize, maps)
 	data["total"] = models.GetTagTotal(maps)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -67,7 +67,7 @@ func AddTag(c *gin.Context) {
 	valid.Required(createdBy, "created_by").Message("创建人不能为空")
 	valid.MaxSize(createdBy, 100, "created_by").Message("创建人最长为100字符")
 	valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
-	
+
 	code := e.INVALID_PARAMS
 
 	if ! valid.HasErrors() {
