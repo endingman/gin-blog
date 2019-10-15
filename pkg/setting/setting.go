@@ -45,36 +45,55 @@ type Database struct {
 
 var DatabaseSetting = &Database{}
 
+type Redis struct {
+	Host        string
+	Password    string
+	MaxIdle     int
+	MaxActive   int
+	IdleTimeout time.Duration
+}
+
+var RedisSetting = &Redis{}
+
 /**
 编写与配置项保持一致的结构体（App、Server、Database）
 使用 MapTo 将配置项映射到结构体上
 对一些需特殊设置的配置项进行再赋值
 */
 func Setup() {
+	//app.ini
 	Cfg, err := ini.Load("conf/app.ini")
 	if err != nil {
 		log.Fatalf("Fail to parse 'conf/app.ini': %v", err)
 	}
 
+	//app
 	err = Cfg.Section("app").MapTo(AppSetting)
 	if err != nil {
 		log.Fatalf("Cfg.MapTo AppSetting err: %v", err)
 	}
-
 	AppSetting.ImageMaxSize = AppSetting.ImageMaxSize * 1024 * 1024
 
+	//server
 	err = Cfg.Section("server").MapTo(ServerSetting)
 	if err != nil {
 		log.Fatalf("Cfg.MapTo ServerSetting err: %v", err)
 	}
-
 	ServerSetting.ReadTimeout = ServerSetting.ReadTimeout * time.Second
 	ServerSetting.WriteTimeout = ServerSetting.ReadTimeout * time.Second
 
+	//database
 	err = Cfg.Section("database").MapTo(DatabaseSetting)
 	if err != nil {
 		log.Fatalf("Cfg.MapTo DatabaseSetting err: %v", err)
 	}
+
+	//redis
+	err = Cfg.Section("redis").MapTo(RedisSetting)
+	if err != nil {
+		log.Fatalf("Cfg.MapTo RedisSetting err: %v", err)
+	}
+	RedisSetting.IdleTimeout = RedisSetting.IdleTimeout * time.Second
 }
 
 //func init() {

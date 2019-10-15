@@ -155,7 +155,7 @@ func ShowTag(c *gin.Context) {
 	var data interface{}
 
 	if !valid.HasErrors() {
-		if models.ExistArticleByID(id) {
+		if exist, _ := models.ExistArticleByID(id); exist {
 			data = models.GetTag(id)
 			code = e.SUCCESS
 		} else {

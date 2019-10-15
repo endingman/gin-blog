@@ -2,9 +2,11 @@ package v1
 
 import (
 	"gin-blog/models"
+	"gin-blog/pkg/app"
 	"gin-blog/pkg/e"
 	"gin-blog/pkg/setting"
 	"gin-blog/pkg/util"
+	"gin-blog/service/article_service"
 	"log"
 	"net/http"
 
@@ -66,35 +68,37 @@ func GetArticles(c *gin.Context) {
 }
 
 func GetArticle(c *gin.Context) {
+	appG := app.Gin{c}
 	var msg string
 	id := com.StrTo(c.Param("id")).MustInt()
 
 	valid := validation.Validation{}
 	valid.Min(id, 1, "id").Message("Id 必须大于 1")
 
-	code := e.INVALID_PARAMS
-	var data interface{}
-
-	if !valid.HasErrors() {
-		if models.ExistArticleByID(id) {
-			data = models.GetArticle(id)
-			code = e.SUCCESS
-		} else {
-			code = e.ERROR_NOT_EXIST_ARTICLE
-		}
-	} else {
-		for _, err := range valid.Errors {
-			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
-			msg = err.Message
-			break
-		}
+	if valid.HasErrors() {
+		msg = app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, msg, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code, msg),
-		"data": data,
-	})
+	articleService := article_service.Article{ID: id}
+	exists, err := articleService.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_CHECK_EXIST_ARTICLE_FAIL, msg, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_ARTICLE, msg, nil)
+		return
+	}
+
+	article, err := articleService.Get()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_GET_ARTICLE_FAIL, msg, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, article)
 }
 
 func AddArticle(c *gin.Context) {
@@ -176,7 +180,7 @@ func UpdateArticle(c *gin.Context) {
 
 	code := e.INVALID_PARAMS
 	if !valid.HasErrors() {
-		if models.ExistArticleByID(id) {
+		if exist, _ := models.ExistArticleByID(id); exist {
 			if models.ExistTagByID(tagId) {
 				data := make(map[string]interface{})
 				if tagId > 0 {
@@ -227,7 +231,7 @@ func DestroyArticle(c *gin.Context) {
 	code := e.INVALID_PARAMS
 
 	if !valid.HasErrors() {
-		if models.ExistArticleByID(id) {
+		if exist, _ := models.ExistArticleByID(id); exist {
 			models.DeleteArticle(id)
 			code = e.SUCCESS
 		} else {
