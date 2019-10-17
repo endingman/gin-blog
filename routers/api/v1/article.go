@@ -14,11 +14,10 @@ import (
 	"github.com/unknwon/com"
 )
 
-var msg string
-
 //这里使用的并不是原来的名字，使用更加简洁的resful api
 //类似laravel里面的接口方法定义
 func GetArticles(c *gin.Context) {
+	var msg string
 	appG := app.Gin{c}
 
 	data := make(map[string]interface{})
@@ -59,6 +58,7 @@ func GetArticles(c *gin.Context) {
 }
 
 func GetArticle(c *gin.Context) {
+	var msg string
 	appG := app.Gin{c}
 
 	id := com.StrTo(c.Param("id")).MustInt()
@@ -93,6 +93,7 @@ func GetArticle(c *gin.Context) {
 }
 
 func AddArticle(c *gin.Context) {
+	var msg string
 	appG := app.Gin{c}
 
 	tagId := com.StrTo(c.PostForm("tag_id")).MustInt()
@@ -116,7 +117,7 @@ func AddArticle(c *gin.Context) {
 		return
 	}
 
-	if !models.ExistTagByID(tagId) {
+	if exist, _ := models.ExistTagByID(tagId); !exist {
 		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_TAG, msg, nil)
 		return
 	}
@@ -135,6 +136,7 @@ func AddArticle(c *gin.Context) {
 }
 
 func UpdateArticle(c *gin.Context) {
+	var msg string
 	appG := app.Gin{c}
 	valid := validation.Validation{}
 
@@ -168,7 +170,7 @@ func UpdateArticle(c *gin.Context) {
 	if exist, _ := models.ExistArticleByID(id); !exist {
 		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_ARTICLE, msg, nil)
 	}
-	if !models.ExistTagByID(tagId) {
+	if exist, _ := models.ExistTagByID(tagId); !exist {
 		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_TAG, msg, nil)
 	}
 
@@ -193,6 +195,7 @@ func UpdateArticle(c *gin.Context) {
 }
 
 func DestroyArticle(c *gin.Context) {
+	var msg string
 	appG := app.Gin{c}
 	id := com.StrTo(c.Param("id")).MustInt()
 

@@ -2,11 +2,10 @@ package v1
 
 import (
 	"gin-blog/models"
+	"gin-blog/pkg/app"
 	"gin-blog/pkg/e"
-	"gin-blog/pkg/logging"
 	"gin-blog/pkg/setting"
 	"gin-blog/pkg/util"
-	"log"
 	"net/http"
 
 	"github.com/astaxie/beego/validation"
@@ -17,6 +16,7 @@ import (
 //这里使用的并不是原来的名字，使用更加简洁的resful api
 //类似laravel里面的接口方法定义
 func GetTags(c *gin.Context) {
+	appG := app.Gin{c}
 	var msg string
 	// c.Query可用于获取?name=test&state=1这类URL参数，而c.DefaultQuery则支持设置一个默认值
 	// code变量使用了e模块的错误编码，这正是先前规划好的错误码，方便排错和识别记录
@@ -38,21 +38,15 @@ func GetTags(c *gin.Context) {
 		maps["state"] = State
 	}
 
-	code := e.SUCCESS
-
 	data["list"] = models.GetTags(util.GetPage(c), setting.AppSetting.PageSize, maps)
 	data["total"] = models.GetTagTotal(maps)
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code, msg),
-		"data": data,
-	})
+	appG.Response(http.StatusOK, e.SUCCESS, msg, data)
 }
 
 func AddTag(c *gin.Context) {
 	var msg string
-
+	appG := app.Gin{c}
 	name := c.PostForm("name")
 	state := com.StrTo(c.DefaultPostForm("state", "0")).MustInt()
 	createdBy := c.PostForm("created_by")
@@ -68,32 +62,26 @@ func AddTag(c *gin.Context) {
 	valid.MaxSize(createdBy, 100, "created_by").Message("创建人最长为100字符")
 	valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
 
-	code := e.INVALID_PARAMS
-
-	if ! valid.HasErrors() {
-		if !models.ExistTagByName(name) {
-			code = e.SUCCESS
-			models.AddTag(name, state, createdBy)
-		} else {
-			code = e.ERROR_EXIST_TAG
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-			msg = err.Message
-			break
-		}
+	if valid.HasErrors() {
+		msg = app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, msg, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code, msg),
-		"data": make(map[string]string),
-	})
+	if models.ExistTagByName(name) {
+		appG.Response(http.StatusOK, e.ERROR_EXIST_TAG, msg, nil)
+		return
+	}
+
+	models.AddTag(name, state, createdBy)
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, make(map[string]string))
+
 }
 
 func UpdateTag(c *gin.Context) {
 	var msg string
+	appG := app.Gin{c}
 
 	id := com.StrTo(c.Param("id")).MustInt()
 	name := c.PostForm("name")
@@ -112,95 +100,75 @@ func UpdateTag(c *gin.Context) {
 	valid.MaxSize(modifiedBy, 100, "modified_by").Message("修改人最长为100字符")
 	valid.MaxSize(name, 100, "name").Message("名称最长为100字符")
 
-	code := e.INVALID_PARAMS
-
-	if !valid.HasErrors() {
-		code = e.SUCCESS
-		if models.ExistTagByID(id) {
-			data := make(map[string]interface{})
-			data["modified_by"] = modifiedBy
-			if name != "" {
-				data["name"] = name
-			}
-			if state != -1 {
-				data["state"] = state
-			}
-			models.EditTag(id, data)
-		} else {
-			code = e.ERROR_NOT_EXIST_TAG
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-			msg = err.Message
-			break
-		}
+	if valid.HasErrors() {
+		msg = app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, msg, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code, msg),
-		"data": make(map[string]string),
-	})
+	if exist, _ := models.ExistTagByID(id); !exist {
+		appG.Response(http.StatusOK, e.SUCCESS, msg, nil)
+		return
+
+	}
+
+	data := make(map[string]interface{})
+	data["modified_by"] = modifiedBy
+	if name != "" {
+		data["name"] = name
+	}
+	if state != -1 {
+		data["state"] = state
+	}
+	models.EditTag(id, data)
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, make(map[string]string))
 }
 
 func ShowTag(c *gin.Context) {
 	var msg string
+	appG := app.Gin{c}
 	id := com.StrTo(c.Param("id")).MustInt()
 
 	valid := validation.Validation{}
 	valid.Min(id, 1, "id").Message("Id 必须大于 1")
 
-	code := e.INVALID_PARAMS
-	var data interface{}
-
-	if !valid.HasErrors() {
-		if exist, _ := models.ExistArticleByID(id); exist {
-			data = models.GetTag(id)
-			code = e.SUCCESS
-		} else {
-			code = e.ERROR_NOT_EXIST_ARTICLE
-		}
-	} else {
-		for _, err := range valid.Errors {
-			log.Printf("err.key: %s, err.message: %s", err.Key, err.Message)
-			msg = err.Message
-			break
-		}
+	if valid.HasErrors() {
+		msg = app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, msg, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code, msg),
-		"data": data,
-	})
+	var data interface{}
+
+	if exist, _ := models.ExistArticleByID(id); !exist {
+		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_TAG, msg, nil)
+		return
+	}
+
+	data = models.GetTag(id)
+	appG.Response(http.StatusOK, e.SUCCESS, msg, data)
 }
 
 func DestroyTag(c *gin.Context) {
 	var msg string
-
+	appG := app.Gin{c}
 	id := com.StrTo(c.Param("id")).MustInt()
 	valid := validation.Validation{}
 	valid.Min(id, 1, "id").Message("ID必须大于0")
-	code := e.INVALID_PARAMS
-	if !valid.HasErrors() {
-		code = e.SUCCESS
-		if models.ExistTagByID(id) {
-			models.DeleteTag(id)
-		} else {
-			code = e.ERROR_NOT_EXIST_TAG
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-			msg = err.Message
-			break
-		}
+
+	if valid.HasErrors() {
+		msg = app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, msg, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code, msg),
-		"data": make(map[string]string),
-	})
+	if exist, _ := models.ExistTagByID(id); !exist {
+		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_TAG, msg, nil)
+		return
+	}
+
+	models.DeleteTag(id)
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, make(map[string]string))
 }
