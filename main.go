@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"gin-blog/models"
+	"gin-blog/pkg/gredis"
 	"gin-blog/pkg/logging"
 	"net/http"
 	"os"
@@ -42,7 +43,8 @@ func main() {
 	setting.Setup()
 	models.Setup()
 	logging.Setup()
-
+	gredis.Setup()
+	
 	//http.Server - Shutdown()
 	router := routers.InitRouter()
 

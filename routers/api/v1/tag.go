@@ -4,8 +4,11 @@ import (
 	"gin-blog/models"
 	"gin-blog/pkg/app"
 	"gin-blog/pkg/e"
+	"gin-blog/pkg/export"
+	"gin-blog/pkg/logging"
 	"gin-blog/pkg/setting"
 	"gin-blog/pkg/util"
+	"gin-blog/service/tag_service"
 	"net/http"
 
 	"github.com/astaxie/beego/validation"
@@ -16,37 +19,45 @@ import (
 //这里使用的并不是原来的名字，使用更加简洁的resful api
 //类似laravel里面的接口方法定义
 func GetTags(c *gin.Context) {
-	appG := app.Gin{c}
 	var msg string
 	// c.Query可用于获取?name=test&state=1这类URL参数，而c.DefaultQuery则支持设置一个默认值
 	// code变量使用了e模块的错误编码，这正是先前规划好的错误码，方便排错和识别记录
 	// util.GetPage保证了各接口的page处理是一致的
 	// c *gin.Context是Gin很重要的组成部分，可以理解为上下文，它允许我们在中间件之间传递变量、管理流、验证请求的JSON和呈现JSON响应
+	appG := app.Gin{C: c}
 	name := c.Query("name")
-
-	maps := make(map[string]interface{})
-	data := make(map[string]interface{})
-
-	if name != "" {
-		maps["name"] = name
-	}
-
-	State := -1
-
+	state := -1
 	if arg := c.Query("state"); arg != "" {
-		State = com.StrTo(arg).MustInt()
-		maps["state"] = State
+		state = com.StrTo(arg).MustInt()
 	}
 
-	data["list"] = models.GetTags(util.GetPage(c), setting.AppSetting.PageSize, maps)
-	data["total"] = models.GetTagTotal(maps)
+	tagService := tag_service.Tag{
+		Name:     name,
+		State:    state,
+		PageNum:  util.GetPage(c),
+		PageSize: setting.AppSetting.PageSize,
+	}
+	tags, err := tagService.GetAll()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_TAGS_FAIL, msg, nil)
+		return
+	}
 
-	appG.Response(http.StatusOK, e.SUCCESS, msg, data)
+	count, err := tagService.Count()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_COUNT_TAG_FAIL, msg, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, map[string]interface{}{
+		"lists": tags,
+		"total": count,
+	})
 }
 
 func AddTag(c *gin.Context) {
 	var msg string
-	appG := app.Gin{c}
+	appG := app.Gin{C: c}
 	name := c.PostForm("name")
 	state := com.StrTo(c.DefaultPostForm("state", "0")).MustInt()
 	createdBy := c.PostForm("created_by")
@@ -68,12 +79,12 @@ func AddTag(c *gin.Context) {
 		return
 	}
 
-	if models.ExistTagByName(name) {
+	if exist, _ := models.ExistTagByName(name); !exist {
 		appG.Response(http.StatusOK, e.ERROR_EXIST_TAG, msg, nil)
 		return
 	}
 
-	models.AddTag(name, state, createdBy)
+	_ = models.AddTag(name, state, createdBy)
 
 	appG.Response(http.StatusOK, e.SUCCESS, msg, make(map[string]string))
 
@@ -81,7 +92,7 @@ func AddTag(c *gin.Context) {
 
 func UpdateTag(c *gin.Context) {
 	var msg string
-	appG := app.Gin{c}
+	appG := app.Gin{C: c}
 
 	id := com.StrTo(c.Param("id")).MustInt()
 	name := c.PostForm("name")
@@ -120,14 +131,14 @@ func UpdateTag(c *gin.Context) {
 	if state != -1 {
 		data["state"] = state
 	}
-	models.EditTag(id, data)
+	_ = models.EditTag(id, data)
 
 	appG.Response(http.StatusOK, e.SUCCESS, msg, make(map[string]string))
 }
 
 func ShowTag(c *gin.Context) {
 	var msg string
-	appG := app.Gin{c}
+	appG := app.Gin{C: c}
 	id := com.StrTo(c.Param("id")).MustInt()
 
 	valid := validation.Validation{}
@@ -139,20 +150,24 @@ func ShowTag(c *gin.Context) {
 		return
 	}
 
-	var data interface{}
-
 	if exist, _ := models.ExistArticleByID(id); !exist {
 		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_TAG, msg, nil)
 		return
 	}
 
-	data = models.GetTag(id)
-	appG.Response(http.StatusOK, e.SUCCESS, msg, data)
+	tag, err := models.GetTag(id)
+
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_GET_ARTICLE_FAIL, msg, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, tag)
 }
 
 func DestroyTag(c *gin.Context) {
 	var msg string
-	appG := app.Gin{c}
+	appG := app.Gin{C: c}
 	id := com.StrTo(c.Param("id")).MustInt()
 	valid := validation.Validation{}
 	valid.Min(id, 1, "id").Message("ID必须大于0")
@@ -163,12 +178,49 @@ func DestroyTag(c *gin.Context) {
 		return
 	}
 
-	if exist, _ := models.ExistTagByID(id); !exist {
+	tagService := tag_service.Tag{ID: id}
+	exists, err := tagService.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_EXIST_TAG_FAIL, msg, nil)
+		return
+	}
+
+	if !exists {
 		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_TAG, msg, nil)
 		return
 	}
 
-	models.DeleteTag(id)
+	if err := tagService.Delete(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_TAG_FAIL, msg, nil)
+		return
+	}
 
-	appG.Response(http.StatusOK, e.SUCCESS, msg, make(map[string]string))
+	appG.Response(http.StatusOK, e.SUCCESS, msg, nil)
+}
+
+func ExportTag(c *gin.Context) {
+	var msg string
+	appG := app.Gin{C: c}
+	name := c.PostForm("name")
+	state := -1
+	if arg := c.PostForm("state"); arg != "" {
+		state = com.StrTo(arg).MustInt()
+	}
+
+	tagService := tag_service.Tag{
+		Name:  name,
+		State: state,
+	}
+
+	filename, err := tagService.Export()
+	if err != nil {
+		logging.Error(err)
+		appG.Response(http.StatusOK, e.ERROR_EXPORT_TAG_FAIL, msg, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, msg, map[string]string{
+		"export_url":      export.GetExcelFullUrl(filename),
+		"export_save_url": export.GetExcelPath() + filename,
+	})
 }

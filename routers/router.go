@@ -21,7 +21,7 @@ func InitRouter() *gin.Engine {
 	gin.SetMode(setting.ServerSetting.RunMode)
 
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
-	
+
 	r.GET("/auth", api.GetAuth)
 	r.POST("/upload", api.UploadImage)
 
@@ -50,6 +50,9 @@ func InitRouter() *gin.Engine {
 		apiv1.GET("/articles/:id", v1.GetArticle)
 		//删除指定文章
 		apiv1.DELETE("/articles/:id", v1.DestroyArticle)
+
+		//导出标签
+		r.POST("/tags/export", v1.ExportTag)
 	}
 
 	return r

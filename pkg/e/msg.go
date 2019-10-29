@@ -25,6 +25,12 @@ var MsgFlags = map[int]string{
 
 	ERROR_CHECK_EXIST_ARTICLE_FAIL: "检查文章是否存在失败",
 	ERROR_GET_ARTICLE_FAIL:         "获取单个文章失败",
+	ERROR_GET_TAG_FAIL:             "获取单个标签失败",
+	ERROR_GET_TAGS_FAIL:            "获取所有标签失败",
+	ERROR_COUNT_TAG_FAIL:           "统计标签失败",
+	ERROR_EXPORT_TAG_FAIL:          "导出标签失败",
+	ERROR_EXIST_TAG_FAIL:           "获取已存在标签失败",
+	ERROR_DELETE_TAG_FAIL:          "删除标签失败",
 }
 
 func GetMsg(code int, msg string) string {
