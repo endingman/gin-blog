@@ -2,6 +2,7 @@ package routers
 
 import (
 	"gin-blog/middleware/jwt"
+	"gin-blog/pkg/export"
 	"gin-blog/pkg/setting"
 	"gin-blog/pkg/upload"
 	"gin-blog/routers/api"
@@ -53,6 +54,10 @@ func InitRouter() *gin.Engine {
 
 		//导出标签
 		r.POST("/tags/export", v1.ExportTag)
+		r.StaticFS("/export", http.Dir(export.GetExcelFullPath()))
+
+		//	导入标签
+		r.POST("/tags/import", v1.ImportTag)
 	}
 
 	return r
